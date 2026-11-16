@@ -7,6 +7,7 @@ pub const records = .{
     @import("hip_records_joint.zig").records,
     @import("hip_records_lighton_ocr.zig").records,
     @import("hip_records_qwen_vision.zig").records,
+    @import("hip_records_dsv41.zig").records,
 };
 
 /// Every family's records as one array.
@@ -22,6 +23,7 @@ test "HIP record counts stay pinned in their owning files" {
         @import("hip_records_columns.zig").records.len,
         @import("hip_records_dense_text.zig").records.len,
         @import("hip_records_draft.zig").records.len,
+        @import("hip_records_dsv41.zig").records.len,
         @import("hip_records_embed.zig").records.len,
         @import("hip_records_gdn.zig").records.len,
         @import("hip_records_glm_ocr.zig").records.len,

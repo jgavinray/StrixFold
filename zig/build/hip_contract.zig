@@ -28,6 +28,16 @@ pub fn steps(b: *std.Build, o: Options) void {
     pair_host.has_side_effects = true;
     o.test_step.dependOn(&pair_host.step);
     b.step("test-hip-pair-contract-host", "Paired projection simulation without uninitialized magnitude reads or GPU calls").dependOn(&pair_host.step);
+    const dsv41_host = b.addRunArtifact(b.addTest(.{ .root_module = b.createModule(.{
+        .root_source_file = b.path("zig/tests/hip/contract_dsv41_pair.zig"),
+        .target = b.graph.host,
+        .optimize = .Debug,
+        .link_libc = true,
+        .imports = &.{ .{ .name = "hip", .module = o.host }, .{ .name = "core", .module = o.host.import_table.get("core").? } },
+    }), .filters = &.{"HIP pair contract:"} }));
+    dsv41_host.has_side_effects = true;
+    o.test_step.dependOn(&dsv41_host.step);
+    b.step("test-hip-dsv41-contract-host", "The dsv41 decode linear's stress sums, bound and margins without a GPU").dependOn(&dsv41_host.step);
     const select_host = b.addRunArtifact(b.addTest(.{ .root_module = b.createModule(.{
         .root_source_file = b.path("zig/tests/hip/contract_select.zig"),
         .target = b.graph.host,

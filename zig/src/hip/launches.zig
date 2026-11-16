@@ -47,6 +47,7 @@ const columns = @import("launches/columns.zig");
 const vision = @import("launches/vision.zig");
 const dense_text = @import("launches/dense_text.zig");
 pub const draft = @import("launches/draft.zig");
+pub const dsv41 = @import("launches/dsv41.zig");
 
 pub const ConvArgs = conv.ConvArgs;
 pub const PlanArgs = plan.PlanArgs;
@@ -110,6 +111,8 @@ pub const Launcher = struct {
     nemo: nemotron_moe.Fns,
     /// The DFlash2 drafter's kernels (draft/draft.hip).
     draft: draft.Fns,
+    /// The decode EXL3 linears of the dsv41 family (dsv41/exl3.hip).
+    dsv41: dsv41.Fns,
 
     const PlanFns = struct {
         kv_write: Function,
@@ -327,6 +330,7 @@ pub const Launcher = struct {
         l.sum_partials = try att.function("tf_sum_partials");
         l.mamba = try mamba.Fns.load(l.mods[@backingInt(kernels.Group.mamba)]);
         l.draft = try draft.Fns.load(l.mods[@backingInt(kernels.Group.draft)]);
+        l.dsv41 = try dsv41.Fns.load(l.mods[@backingInt(kernels.Group.dsv41)]);
         const tiles = l.mods[@backingInt(kernels.Group.affine_tiles)];
         const dot2 = l.mods[@backingInt(kernels.Group.affine_dot2)];
         const chip = caps.Caps.of(kernels.arch) orelse return error.Invalid;
