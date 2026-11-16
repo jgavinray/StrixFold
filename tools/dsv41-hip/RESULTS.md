@@ -46,6 +46,36 @@ and the runs' bench-*.json (`~/tfp/qual/out/bench-1019T232410-q-86-off`, `bench-
 | 8,165-token prompt at STRICT=1 | prefill 829 tok/s, decode 24.0 tok/s | 58fd1a9, the lead's run | node1 `~/tfp/run/lead_fl10.log` |
 | HIP graphs over tcp_proxy vs eager | a 29-token reply 1.245 s vs 1.41 s, token ids identical | 58fd1a9, not quiet | `~/tfp/qual/out/qs-1019T213921/` |
 
+### Tuning measurements (fc1399c, 2026-11-16, both boxes, one USB4 cable)
+
+Greedy, temperature 0, 256-token streams, the operator's served configuration (`~/tfp/run/conf/my.conf`: context
+400000, drafts on, proxy + graphs, MTU 1500); `tools/bench_openai.py --tokens 256 --reps 5` for one chat (median of 5)
+and `tools/bench_concurrent.py --levels 1,2,4,8 --reps 3` for the ladder, 0 failed and 0 unmeasured requests in every
+run. Restart A/B: `first_light.sh down`, then `up` with the one setting changed.
+
+**L2 prefetch (L2_PREFETCH=1, k-dec2's MALL prefetch, on by default since 1ce95c42).** The decode rounds touch the
+next kernels' weights into the 32 MB memory-side cache behind the queued work:
+
+| streams at once | code, prefetch on / off | chat, prefetch on / off | delta |
+|---|---|---|---|
+| 1 | 70.3 / 67.2 tok/s | 52.8 / 50.8 tok/s | +3.9% to +4.6% |
+| 2 | 107.1 / 103.9 | 84.2 / 80.9 | +3.1% to +4.1% |
+| 4 | 146.2 / 142.3 | 117.7 / 115.8 | +1.6% to +2.7% |
+| 8 | 171.3 / 166.0 | 165.0 / 160.4 | +2.9% to +3.2% |
+
+Greedy text is byte-identical with the prefetch on and off (three prompts, seeded). The server's own bench
+(400-token cases) moves the same way: code 72.4 vs 69.3, prose 47.3 vs 45.2 tok/s.
+
+**FIX_K sweep (fixed draft depth vs the adaptive `chooseK`).** Forcing a fixed k loses at every depth; the adaptive
+pricing is strictly better (one chat, `bench_openai`, median of 5): k=2 58.4/45.0, k=3 62.1/45.5, k=4 59.8/44.5,
+k=5 62.4/43.4, adaptive 67.4/50.8 tok/s (code / chat).
+
+**GPU DPM profile_peak: -8%.** Forcing peak GPU clocks slowed decode (70.6 to 64.9 tok/s code, one chat): on this
+unified-memory part, holding GPU clocks high steals power headroom from the memory subsystem, and DPM auto's
+downclock during the memory-bound expert kernels is the better state. Reverted.
+
+**ENGRAM_AIO=1: no decode win** (-0.5% code, -0.3% chat) and prefill drops about 6% (1487 to 1392 tok/s); left off.
+
 Reference (PLAN.md): 2 x DGX Spark, same EXL3 2.9 bpw pack, TP2. the target bands: prose decode at 65-75% of Spark and prompt
 reading at 70-85%. Prose with drafts on is at 74%; narrative (62%) and prompt reading (59-60%) are below their bands.
 
