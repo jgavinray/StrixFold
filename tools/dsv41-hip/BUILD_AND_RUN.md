@@ -81,7 +81,8 @@ read-only; `~/tfp/deploy/current` points at it. The script refuses a tree with u
 One configuration file drives both ranks (`tools/dsv41-hip/serve.conf`, commented line by line): the deployment, the
 input bundle and its pinned hash, context, streams, verify rows, drafts, graphs, transport settings, timeouts and the
 probe. Put your copy at the same path under each box's `$HOME`, then from the deployment's tools on node1:
-
+This pair's served configuration is pinned at `tools/dsv41-hip/serve.halo.conf` (17 November 2026: eight streams of
+400,000 positions each, `POOL` 3,200,000, `PEAK_GIB` 105, the 1M-table kit); copy it to the path above on both boxes.
 A pair linked by RDMA-capable network cards (RoCE v2) can set `TRANSPORT=rdma` with `RDMA_DEV0`/`RDMA_DEV1` (or
 `RDMA_IFNAME`) and `RDMA_GID`: the slot collective then moves each gather as one RDMA write with immediate instead of
 over TCP (COLLECTIVES-DESIGN.md 3.6). `TP_STRIPE` and `COLL_PROXY_STRIPE_KIB` must be empty, `RLIMIT_MEMLOCK` must
